@@ -30,7 +30,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn load_all_toml_from_dir<P: AsRef<Path>>(dir: P) -> Result<Option<Config>, Box<dyn Error>> {
-    
     let toml_paths: Vec<_> = fs::read_dir(dir)?
         .filter_map(Result::ok)
         .map(|entry| entry.path())
