@@ -1,0 +1,15 @@
+[package]
+name = "wallet-opt"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+yahoo_finance_api = "2.0"
+chrono = "0.4"
+time = "0.3.41"
+tokio = { version = "1", features = ["full"] }
+tokio-test = "0.4.4"
+
+config = "0.14"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
