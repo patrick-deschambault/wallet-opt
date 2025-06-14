@@ -1,3 +1,4 @@
+use chrono::Offset;
 use config::{Config, File};
 use time::OffsetDateTime;
 use tokio_test;
@@ -11,6 +12,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use std::{collections::HashMap, hash::Hash};
+
+use time::macros::datetime;
+use wallet_opt::wallet::{self, Stock};
+use yahoo_finance_api::YResponse;
+
+use wallet_opt::wallet::StockBuilder;
+
 #[derive(Debug, Deserialize)]
 struct Tickers {
     symbols: Vec<String>,
@@ -19,16 +28,19 @@ struct Tickers {
 #[cfg(not(feature = "blocking"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    use std::{collections::HashMap, hash::Hash};
-
-    use time::macros::datetime;
-    use yahoo_finance_api::YResponse;
-
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("config");
 
     let settings = load_all_toml_from_dir(path)?.ok_or("No config files found.")?;
 
     let tickers: Tickers = settings.try_deserialize()?;
+
+    let stocks: Vec<Stock> = tickers
+        .symbols
+        .iter()
+        .map(|tag| StockBuilder::default().ticker(tag.clone()).build())
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let wallet = wallet::WalletBuilder::default().stocks(stocks).build()?;
 
     let conn = yahoo::YahooConnector::new().unwrap();
     let start = datetime!(2000-07-25 00:00:00.00 UTC);
