@@ -28,13 +28,11 @@ struct Tickers {
 #[cfg(not(feature = "blocking"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    use futures::future::try_join_all;
-
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("config");
 
-    let settings = load_all_toml_from_dir(path)?.ok_or("No config files found.")?;
+    let tickers: Tickers = load_config_file(path.join("xiu_top_20.toml").as_path())?;
 
-    let tickers: Tickers = settings.try_deserialize()?;
+    //let tickers: Tickers = settings.try_deserialize()?;
 
     let start = datetime!(2000-07-25 00:00:00.00 UTC);
 
@@ -75,7 +73,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn load_all_toml_from_dir<P: AsRef<Path>>(dir: P) -> Result<Option<Config>, Box<dyn Error>> {
+fn load_config_file<T>(path: impl AsRef<Path>) -> Result<T, Box<dyn Error>>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    let settings = Config::builder()
+        .add_source(File::from(path.as_ref()))
+        .build()?;
+
+    let deserialized: T = settings.try_deserialize()?;
+    Ok(deserialized)
+}
+
+fn _load_all_toml_from_dir<P: AsRef<Path>>(dir: P) -> Result<Option<Config>, Box<dyn Error>> {
     let toml_paths: Vec<_> = fs::read_dir(dir)?
         .filter_map(Result::ok)
         .map(|entry| entry.path())
