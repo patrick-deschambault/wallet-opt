@@ -1,7 +1,4 @@
 use clap::Parser;
-use config::{Config, File};
-use serde::Deserialize;
-use std::{error::Error, path::Path};
 
 /// CLI options
 #[derive(Parser)]

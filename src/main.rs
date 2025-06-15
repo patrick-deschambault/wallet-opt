@@ -1,20 +1,10 @@
-use chrono::Offset;
 use config::{Config, File};
-use time::OffsetDateTime;
-use tokio_test;
-use yahoo_finance_api as yahoo;
 
-use futures::stream::{self, StreamExt};
 use serde::Deserialize;
-use std::{
-    error::Error,
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{error::Error, fs, path::Path};
 
 use time::macros::datetime;
 
-use chrono::Utc;
 use clap::Parser;
 use wallet_opt::cli::Cli;
 
@@ -23,7 +13,6 @@ struct Tickers {
     symbols: Vec<String>,
 }
 
-#[cfg(not(feature = "blocking"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     use futures::future::try_join_all;

@@ -1,11 +1,7 @@
 use std::error::Error;
 
-use chrono::{DateTime, NaiveDate};
 use time::OffsetDateTime;
 use yahoo_finance_api::YahooConnector;
-
-use crate::stock::{Stock, StockOrigin};
-use chrono::{Duration, TimeZone, Utc};
 
 #[async_trait::async_trait]
 pub trait MarketDataProvider {

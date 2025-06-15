@@ -1,6 +1,5 @@
 use std::error::Error;
 
-use derive_builder::Builder;
 use getset::Getters;
 use time::OffsetDateTime;
 
