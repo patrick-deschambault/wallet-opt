@@ -13,7 +13,6 @@ use std::{
 };
 
 use time::macros::datetime;
-use wallet_opt::wallet::{self};
 
 use chrono::Utc;
 use clap::Parser;
