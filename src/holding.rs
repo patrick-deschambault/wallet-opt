@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, path::Path};
 
 use crate::{market_data_provider::MarketDataProvider, stock::Stock};
 
@@ -11,6 +11,11 @@ pub struct RawHolding {
     pub quantity: u32,
     pub price_paid: f64,
     pub date: Date,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RawPortfolio {
+    pub holdings: Vec<RawHolding>,
 }
 
 #[derive(Debug)]
@@ -60,4 +65,40 @@ impl Holding {
 
         Ok(self.quantity as f64 * current_price)
     }
+}
+
+use std::fs;
+
+pub async fn load_holdings_from_toml<P>(
+    path: impl AsRef<Path>,
+    provider: &P,
+) -> Result<Vec<Holding>, Box<dyn std::error::Error>>
+where
+    P: MarketDataProvider + Sync + Send,
+{
+    let content = fs::read_to_string(path)?;
+    let raw: RawPortfolio = toml::from_str(&content)?;
+
+    let mut holdings = Vec::new();
+    for raw_holding in raw.holdings {
+        let datetime = raw_holding
+            .date
+            .with_time(time::Time::from_hms(16, 0, 0).unwrap()) // market close
+            .assume_offset(time::UtcOffset::UTC);
+
+        let stock = Stock::new(
+            provider,
+            &raw_holding.symbol.clone(),
+            raw_holding.price_paid,
+            datetime,
+        )
+        .await?;
+
+        holdings.push(Holding {
+            stock,
+            quantity: raw_holding.quantity,
+        });
+    }
+
+    Ok(holdings)
 }
