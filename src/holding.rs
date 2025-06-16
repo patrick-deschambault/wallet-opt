@@ -65,6 +65,10 @@ impl Holding {
 
         Ok(self.quantity as f64 * current_price)
     }
+
+    pub fn stock(&self) -> Stock {
+        self.stock.clone()
+    }
 }
 
 use std::fs;
