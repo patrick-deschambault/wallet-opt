@@ -1,12 +1,21 @@
 use config::{Config, File};
 
 use serde::Deserialize;
-use std::{error::Error, fs, path::Path};
+use std::{
+    error::Error,
+    fs,
+    path::{Path, PathBuf},
+};
+
+use yahoo_finance_api::YahooConnector;
 
 use time::macros::datetime;
 
 use clap::Parser;
-use wallet_opt::cli::Cli;
+use wallet_opt::{
+    cli::Cli,
+    holding::{self, Holding},
+};
 
 #[derive(Debug, Deserialize)]
 struct Tickers {
@@ -15,28 +24,31 @@ struct Tickers {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    use futures::future::try_join_all;
-    use wallet_opt::stock::Stock;
-    use yahoo_finance_api::YahooConnector;
+    // let cli = Cli::try_parse()?;
 
-    let cli = Cli::try_parse()?;
-
-    let tickers: Tickers = load_config_file(cli.config)?;
-
-    let start = datetime!(2025-06-13 00:00:00.00 UTC);
+    let date = datetime!(2025-06-13 00:00:00.00 UTC);
 
     let provider = YahooConnector::new()?;
 
-    let stocks: Vec<Stock> = try_join_all(
-        tickers
-            .symbols
-            .iter()
-            .map(|tag| Stock::from_market(&provider, tag, &start)),
+    let holdings = holding::load_holdings_from_toml(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("config/holdings.toml"),
+        &provider,
     )
     .await?;
 
-    for s in stocks {
-        println!("Ticker: {:?}, Price: {:?}", s.ticker(), s.price());
+    for h in holdings {
+        let current_value = h.value_with_date(&provider, &date).await?;
+        let initial_value = h.initial_value();
+
+        let roi = ((current_value - initial_value) / initial_value) * 100.0;
+
+        println!(
+            "Ticker: {:?}, Initial Value: {:?}, Current Value: {:?}, ROI: {:?}",
+            h.stock().ticker(),
+            initial_value,
+            current_value,
+            roi,
+        );
     }
 
     Ok(())
