@@ -69,6 +69,30 @@ impl Holding {
     pub fn stock(&self) -> Stock {
         self.stock.clone()
     }
+
+    pub async fn dividend_generated<P>(
+        &self,
+        provider: &P,
+        end_date: &OffsetDateTime,
+    ) -> Result<f64, Box<dyn Error>>
+    where
+        P: MarketDataProvider + Sync + Send,
+    {
+        let dividends = provider
+            .get_dividends_per_share(
+                self.stock.ticker(),
+                self.stock.date(), // Date of buying the stock
+                end_date,          // Use today for now..
+            )
+            .await?;
+
+        let total: f64 = dividends
+            .iter()
+            .map(|(_, amount)| amount * self.quantity as f64)
+            .sum();
+
+        Ok(total)
+    }
 }
 
 use std::fs;
