@@ -9,7 +9,7 @@ use std::{
 
 use yahoo_finance_api::YahooConnector;
 
-use time::macros::datetime;
+use time::{macros::datetime, OffsetDateTime};
 
 use clap::Parser;
 use wallet_opt::{
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let provider = YahooConnector::new()?;
 
     let holdings = holding::load_holdings_from_toml(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("config/holdings.toml"),
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("config/celi.toml"),
         &provider,
     )
     .await?;
@@ -42,12 +42,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         let roi = ((current_value - initial_value) / initial_value) * 100.0;
 
+        let cumulated_dividends = h
+            .dividend_generated(&provider, &OffsetDateTime::now_utc())
+            .await?;
+
         println!(
-            "Ticker: {:?}, Initial Value: {:?}, Current Value: {:?}, ROI: {:?}",
+            "Ticker: {:?}, \nDate of buy: {:?}, \nInitial Value: {:?}, \nCurrent Value: {:?}, \nROI (%): {:?}, \nCumulated dividends: {:?}\n",
             h.stock().ticker(),
+            h.stock().date().date(),
             initial_value,
             current_value,
             roi,
+            cumulated_dividends,
         );
     }
 
